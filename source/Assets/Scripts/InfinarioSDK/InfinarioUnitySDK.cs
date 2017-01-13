@@ -3,6 +3,7 @@ using System;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Infinario.Interface;
 using Infinario.Commands;
 using Infinario.Storage;
@@ -175,9 +176,26 @@ namespace Infinario.SDK
                 sender.GetCurrentSegment(customerIds, projectSecret, segmentaionId, onSegmentReceiveCallback);
 	    }
 
-	    {
-	    }
+		public override void GetCurrentCampaign(Action<bool, List<string>, string> onSetupsReceiveCallback)
+		{
+//            var bannerIdsList = new List<string>
+//            {
+//                "583c1a43f4cf79df7a8bc634", "57f6d710f4cf7964e8813f84"
+//            };
 
+
+            sender.GetBannerIdsList(projectToken, (success, bannersIdsList, error) =>
+		    {
+		        if (success && bannersIdsList != null)
+		        {
+		            sender.GetCurrentCampaign(customerIds, projectToken, bannersIdsList, onSetupsReceiveCallback);
+		        }
+		        else
+		        {
+                    onSetupsReceiveCallback(false,null,error);
+                }
+            });
+	    }
 
 	    private Dictionary<string, object> MergeAutomaticProperties(Dictionary<string, object> properties)
 		{

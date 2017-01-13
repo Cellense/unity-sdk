@@ -13,5 +13,6 @@ namespace Infinario.Interface
 		public abstract void TrackSessionEnd (Dictionary<string, object> properties);
 		public abstract void TrackVirtualPayment (string currency, long amount, string itemName, string itemType);
 		public abstract void GetCurrentSegment (string projectSecret, string segmentaionId, Action<bool, InfinarioSegment, string> onSegmentReceiveCallback);
-	}
+        public abstract void GetCurrentCampaign(Action<bool, List<string>, string> onSegmentReceiveCallback);
+    }
 }

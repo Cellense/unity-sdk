@@ -59,7 +59,7 @@ namespace Infinario.Sender
                 if (commands.Count > 0)
                 {
                     // 1B: Prepare the http components
-                    var httpBody = Json.Serialize(new Dictionary<string, object> {{"commands", commands}});
+                    var httpBody = Json.Serialize(new Dictionary<string, object> { { "commands", commands } });
                     byte[] httpBodyBytes = Encoding.UTF8.GetBytes(httpBody);
                     Dictionary<string, string> httpHeaders = new Dictionary<string, string>
                     {
@@ -68,7 +68,7 @@ namespace Infinario.Sender
 
                     // 2. Send the bulk API request
                     WWW req = new WWW(httpTarget, httpBodyBytes, httpHeaders);
-                        //TODO: we could add a timeout functionality
+                    //TODO: we could add a timeout functionality
                     yield return req;
 
                     // 3A: Check response for errors
@@ -81,8 +81,8 @@ namespace Infinario.Sender
                         // 3B. Parse the API response
                         var responseBody = req.text;
                         Dictionary<string, object> apiResponse =
-                            (Dictionary<string, object>) Json.Deserialize(responseBody);
-                        bool success = (bool) apiResponse["success"];
+                            (Dictionary<string, object>)Json.Deserialize(responseBody);
+                        bool success = (bool)apiResponse["success"];
                         if (success)
                         {
                             consecutiveFailedRequests = 0;
@@ -102,7 +102,7 @@ namespace Infinario.Sender
 
                 // 5. Detemine wait time and go idle.
                 float waitSeconds =
-                    (float) System.Math.Pow(WAIT_FOR_DEFAULT, System.Math.Sqrt(consecutiveFailedRequests + 1));
+                    (float)System.Math.Pow(WAIT_FOR_DEFAULT, System.Math.Sqrt(consecutiveFailedRequests + 1));
                 if (consecutiveFailedRequests == 0 && commandQueue.ElementCount > 0)
                 {
                     waitSeconds = 0f;
@@ -127,7 +127,7 @@ namespace Infinario.Sender
             int idx = 0;
             foreach (var cmdResponse in commandResponses)
             {
-                var cmdResponseDict = (Dictionary<string, object>) cmdResponse;
+                var cmdResponseDict = (Dictionary<string, object>)cmdResponse;
                 string status = (cmdResponseDict["status"] as string).ToLower();
                 if (status.Equals("retry"))
                 {
@@ -142,7 +142,7 @@ namespace Infinario.Sender
         private IEnumerator GetCurrentSegmentCoroutine(Dictionary<string, object> customerIds, string projectSecret,
             string segmentationId, Action<bool, InfinarioSegment, string> onSegmentReceiveCallback)
         {
-           
+
 
             var httpTarget = (_target ?? Constants.DEFAULT_TARGET) + Constants.GET_SEGMENT_URL;
 
@@ -177,8 +177,8 @@ namespace Infinario.Sender
             {
                 // Parse the API response
                 var responseBody = req.text;
-                Dictionary<string, object> apiResponse = (Dictionary<string, object>) Json.Deserialize(responseBody);
-                bool success = (bool) apiResponse["success"];
+                Dictionary<string, object> apiResponse = (Dictionary<string, object>)Json.Deserialize(responseBody);
+                bool success = (bool)apiResponse["success"];
                 if (success)
                 {
                     var segmentName = apiResponse["segment"] as string;
@@ -194,33 +194,43 @@ namespace Infinario.Sender
                     {
                         error += exception.Message;
                     }
-	                onSegmentReceiveCallback(true, new InfinarioSegment(segmentName, segmentationName, segmentIndex), error);
-	            }
-	            else
-	            {
-                    onSegmentReceiveCallback(false, null, "Unsuccessful segmentation request. Response text:\n"+req.text);
+                    onSegmentReceiveCallback(true, new InfinarioSegment(segmentName, segmentationName, segmentIndex), error);
                 }
-	        }
-	    }
+                else
+                {
+                    onSegmentReceiveCallback(false, null, "Unsuccessful segmentation request. Response text:\n" + req.text);
+                }
+            }
+        }
 
-	    public void GetCurrentSegment(Dictionary<string, object> customerIds, string projectSecret, string segmentaionId, Action<bool, InfinarioSegment, string> onSegmentReceiveCallback)
-	    {
-	        StartCoroutine(GetCurrentSegmentCoroutine(customerIds,projectSecret,segmentaionId,onSegmentReceiveCallback));
-	    }
-
-        private IEnumerator GetCurrentCampaignCoroutine(Dictionary<string, object> customerIds, string projectSecret, Action<bool, InfinarioSegment, string> onCampaignReceiveCallback)
+        public void GetCurrentSegment(Dictionary<string, object> customerIds, string projectSecret, string segmentaionId, Action<bool, InfinarioSegment, string> onSegmentReceiveCallback)
         {
-            var data = new Dictionary<string, string>()
-            {
-                "company_id":"d29ec908-d979-11e5-b66c-b083fedeed2e",
-                "customer_ids":{"cookie":"a846c098-adec-4c00-9d75-262991f4f55e"},
-                "banner_ids":["583c1a43f4cf79df7a8bc634","57f6d710f4cf7964e8813f84"],
-                "params":null
-            };                        
-            var jsonData = Json.Serialize(data);
-            var httpTarget = (_target ?? Constants.DEFAULT_TARGET) + Constants.CAMPAIGNS_JSONP_URL + jsonData;         
+            StartCoroutine(GetCurrentSegmentCoroutine(customerIds, projectSecret, segmentaionId, onSegmentReceiveCallback));
+        }
 
-            WWW req = new WWW(httpTarget); 
+        
+
+
+
+        public void GetCurrentCampaign(Dictionary<string, object> customerIds, string projectToken, List<string> bannerIdsList, Action<bool, List<string>, string> onCampaignReceiveCallback)
+        {
+            StartCoroutine(GetCurrentCampaignCoroutine(customerIds, projectToken, bannerIdsList, onCampaignReceiveCallback));
+        }
+
+
+        private IEnumerator GetCurrentCampaignCoroutine(Dictionary<string, object> customerIds, string projectToken, List<string> bannerIdsList, Action<bool, List<string>, string> onCampaignReceiveCallback)
+        {
+            var data = new Dictionary<string, object>
+            {
+                {"company_id",projectToken},
+                {"customer_ids",customerIds},
+                {"banner_ids",bannerIdsList},
+                {"params",null}
+            };
+            var jsonData = Json.Serialize(data);
+            var httpTarget = (_target ?? Constants.DEFAULT_TARGET) + Constants.CAMPAIGNS_JSONP_URL + jsonData;
+            Debug.Log(httpTarget);
+            WWW req = new WWW(httpTarget);
             yield return req;
 
             // Check response for errors
@@ -232,38 +242,100 @@ namespace Infinario.Sender
             {
                 // Parse the API response
                 var responseBody = req.text;
-                Dictionary<string, object> apiResponse = (Dictionary<string, object>) Json.Deserialize(responseBody);
-                bool success = (bool) apiResponse["success"];
-                if (success)
+                int start = responseBody.IndexOf('(') + 1;
+                int length = responseBody.LastIndexOf(')') - start;
+                responseBody = responseBody.Substring(start, length);
+
+                Debug.Log(responseBody);
+                Dictionary<string, object> apiResponse = (Dictionary<string, object>)Json.Deserialize(responseBody);
+                bool success = (bool)apiResponse["success"];
+                var dataList = apiResponse["data"] as List<object>;
+                if (success && (dataList != null))
                 {
-                    var segmentName = apiResponse["segment"] as string;
-                    var segmentationName = apiResponse["analysis_name"] as string;
-                    var c = apiResponse["segment_index"];
-                    string error = "";
-                    int segmentIndex = -1;
-                    try
+                    var jsonList = new List<string>();
+                    foreach (string dataString in dataList)
                     {
-                        segmentIndex = Convert.ToInt32(c);
+                        var startText = "insertBanner.script = function() {";
+                        var endText = "};\ninsertBanner.remove";
+                        start = dataString.IndexOf(startText) + startText.Length;
+                        length = dataString.IndexOf(endText) - start;
+                        var json = dataString.Substring(start, length);
+                        Debug.Log(json);
+                        jsonList.Add(json);
                     }
-                    catch (Exception exception)
-                    {
-                        error += exception.Message;
-                    }
-	                onCampaignReceiveCallback(true, new InfinarioSegment(segmentName, segmentationName, segmentIndex), error);
-	            }
-	            else
-	            {
-                    onCampaignReceiveCallback(false, null, "Unsuccessful segmentation request. Response text:\n"+req.text);
+                    onCampaignReceiveCallback(true, jsonList, null);
                 }
-	        }
-	    }
+                else
+                {
+                    onCampaignReceiveCallback(false, null, "Unsuccessful campaign request. Response text:\n" + req.text);
+                }
+            }
+        }
 
 
 
-        public void GetCurrentCampaign(Dictionary<string, object> customerIds, string projectSecret, Action<bool, InfinarioSegment, string> onCampaignReceiveCallback)
-	    {
-	        StartCoroutine(GetCurrentCampaignCoroutine(customerIds,projectSecret,onCampaignReceiveCallback));
-	    }
+        public void GetBannerIdsList(string projectToken, Action<bool, List<string>, string> onCampaignIdsReceiveCallback)
+        {
+            StartCoroutine(GetCampainsIdsCoroutine(projectToken, onCampaignIdsReceiveCallback));
+        }
 
-	}
+        private IEnumerator GetCampainsIdsCoroutine(string projectToken, Action<bool, List<string>, string> onCampaignIdsReceiveCallback)
+        {
+            var httpTarget = (_target ?? Constants.DEFAULT_TARGET) + Constants.BULK_URL;
+
+            var command = new Dictionary<string, object>() {
+                {"name", Constants.ENDPOINT_CAMPAIGNS},
+                {"data", new Dictionary<string, object>() {
+                        {"company_id", projectToken},
+                }}
+            };
+
+            var body = new Dictionary<string, object> { { "commands", new List<Dictionary<string, object>> { command }} };
+
+            var httpBody = Json.Serialize(body);
+
+            byte[] httpBodyBytes = Encoding.UTF8.GetBytes(httpBody);
+            Dictionary<string, string> httpHeaders = new Dictionary<string, string>
+            {
+                {"Accept", "application/json"},
+                {"Content-type", "application/json"},
+            };
+
+            WWW req = new WWW(httpTarget, httpBodyBytes, httpHeaders);
+            yield return req;
+
+            // Check response for errors
+            if (!string.IsNullOrEmpty(req.error))
+            {
+                onCampaignIdsReceiveCallback(false, null, req.error + "\n " + req.text);
+            }
+            else
+            {
+                // Parse the API response
+                var responseBody = req.text;
+                Debug.Log(responseBody);
+                Dictionary<string, object> apiResponse = (Dictionary<string, object>)Json.Deserialize(responseBody);
+                bool success = (bool)apiResponse["success"];
+                var results = apiResponse["results"] as List<object>;
+                var res = results[0] as Dictionary<string, object>;
+                if (success && (results != null) && res != null)
+                {
+                    var dataList = res["data"] as List<object>;
+                    var idsList = new List<string>();
+                    foreach (Dictionary<string, object> campaign in dataList)
+                    {
+                        var id = campaign["_id"] as string;
+                        Debug.Log(id);
+                        idsList.Add(id);
+                    }
+                    onCampaignIdsReceiveCallback(true, idsList, null);
+                }
+                else
+                {
+                    onCampaignIdsReceiveCallback(false, null, "Unsuccessful campaign ids list request. Response text:\n" + req.text);
+                }
+            }
+        }
+
+    }
 }
