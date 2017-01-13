@@ -175,6 +175,10 @@ namespace Infinario.SDK
                 sender.GetCurrentSegment(customerIds, projectSecret, segmentaionId, onSegmentReceiveCallback);
 	    }
 
+	    {
+	    }
+
+
 	    private Dictionary<string, object> MergeAutomaticProperties(Dictionary<string, object> properties)
 		{
 			lock (initializeFinalizeLock)

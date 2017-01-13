@@ -47,10 +47,13 @@
 	    public static string DEFAULT_SECRET = "X-Infinario-Secret";
         public static string DEFAULT_TARGET = "https://api.infinario.com";
 		public static string BULK_URL = "/bulk";
-		
+				
+		public static string ENDPOINT_UPDATE = "crm/customers";
+		public static string ENDPOINT_TRACK = "crm/events";		
+		public static string ENDPOINT_CAMPAIGNS = "campaigns/banners";
+
+		public static string CAMPAIGNS_JSONP_URL = "/campaigns/banners/show/jsonp?callback=callback_json1&data=";
 		public static string GET_SEGMENT_URL = "/analytics/segmentation-for";
 
-		public static string ENDPOINT_UPDATE = "crm/customers";
-		public static string ENDPOINT_TRACK = "crm/events";
 	}
 }

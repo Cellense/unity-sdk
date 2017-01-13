@@ -207,5 +207,63 @@ namespace Infinario.Sender
 	    {
 	        StartCoroutine(GetCurrentSegmentCoroutine(customerIds,projectSecret,segmentaionId,onSegmentReceiveCallback));
 	    }
+
+        private IEnumerator GetCurrentCampaignCoroutine(Dictionary<string, object> customerIds, string projectSecret, Action<bool, InfinarioSegment, string> onCampaignReceiveCallback)
+        {
+            var data = new Dictionary<string, string>()
+            {
+                "company_id":"d29ec908-d979-11e5-b66c-b083fedeed2e",
+                "customer_ids":{"cookie":"a846c098-adec-4c00-9d75-262991f4f55e"},
+                "banner_ids":["583c1a43f4cf79df7a8bc634","57f6d710f4cf7964e8813f84"],
+                "params":null
+            };                        
+            var jsonData = Json.Serialize(data);
+            var httpTarget = (_target ?? Constants.DEFAULT_TARGET) + Constants.CAMPAIGNS_JSONP_URL + jsonData;         
+
+            WWW req = new WWW(httpTarget); 
+            yield return req;
+
+            // Check response for errors
+            if (!string.IsNullOrEmpty(req.error))
+            {
+                onCampaignReceiveCallback(false, null, req.error + "\n " + req.text);
+            }
+            else
+            {
+                // Parse the API response
+                var responseBody = req.text;
+                Dictionary<string, object> apiResponse = (Dictionary<string, object>) Json.Deserialize(responseBody);
+                bool success = (bool) apiResponse["success"];
+                if (success)
+                {
+                    var segmentName = apiResponse["segment"] as string;
+                    var segmentationName = apiResponse["analysis_name"] as string;
+                    var c = apiResponse["segment_index"];
+                    string error = "";
+                    int segmentIndex = -1;
+                    try
+                    {
+                        segmentIndex = Convert.ToInt32(c);
+                    }
+                    catch (Exception exception)
+                    {
+                        error += exception.Message;
+                    }
+	                onCampaignReceiveCallback(true, new InfinarioSegment(segmentName, segmentationName, segmentIndex), error);
+	            }
+	            else
+	            {
+                    onCampaignReceiveCallback(false, null, "Unsuccessful segmentation request. Response text:\n"+req.text);
+                }
+	        }
+	    }
+
+
+
+        public void GetCurrentCampaign(Dictionary<string, object> customerIds, string projectSecret, Action<bool, InfinarioSegment, string> onCampaignReceiveCallback)
+	    {
+	        StartCoroutine(GetCurrentCampaignCoroutine(customerIds,projectSecret,onCampaignReceiveCallback));
+	    }
+
 	}
 }

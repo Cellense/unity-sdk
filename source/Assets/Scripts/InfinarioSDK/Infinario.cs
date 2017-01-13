@@ -131,5 +131,10 @@ namespace Infinario
 			implementation.GetCurrentSegment(projectSecret, segmentationId, onSegmentReceiveCallback);			
 		}		
 
+		public void GetCurrentCampaign(string projectSecret, string CampaignationId, Action<bool, InfinarioCampaign, string> onCampaignReceiveCallback)
+		{	
+			implementation.GetCurrentCampaign(projectSecret, CampaignationId, onCampaignReceiveCallback);			
+		}	
+
 	}
 }
