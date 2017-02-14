@@ -139,6 +139,32 @@ InfinarioSegment class object returned in OnSegmentReceiveCallback contains publ
 - `GetSegmentationName()` returning string name of segmentation  
 - `GetSegmentIndex()` returns integer identifying the order of current segment in segmentation (starting with 0) 
 
+### AB testing using WebLayers
+You can send any text data via JS tab of WebLayer Design section in Infinario/Exponea. This text can be retrieved via GetCurrentCampaign method. This will get list of strings from all AB tests, which player is part of.
+```
+    infinario.GetCurrentCampaign(OnCampaignReceiveCallback); 
+
+    private void OnCampaignReceiveCallback(bool success, List<string> jsonsList, string error)
+    {
+        if (success)
+        {
+            foreach (var json in jsonsList)
+            {
+                Debug.Log(json);
+            }
+            
+        } else {
+            Debug.Log(error);
+        }
+    }
+
+```
+GetCurrentCampaign has one parameter - callback method which has 3 parameters:
+- `boolean` type specifing if retrieving of campaign was successfull
+- `List<string>` string list, which contains our data, set in JS tab of AB testing WebLayers. One string per campaign.
+- `string` information about errors that occured
+``` 
+
         
 ### Offline Behavior
 
